@@ -1,4 +1,4 @@
-use rusty_zig::tokenizer::{ Token, TokenType, Diagnostic };
+use rusty_zig::tokenizer::{Diagnostic, Token, TokenType};
 
 fn main() {
     let diag = Diagnostic::new(1, 1, 1);

@@ -8,11 +8,7 @@ pub struct Diagnostic {
 
 impl Diagnostic {
     pub fn new(start: usize, end: usize, line: usize) -> Self {
-        Self {
-            start,
-            end,
-            line,
-        }
+        Self { start, end, line }
     }
 }
 
@@ -33,7 +29,6 @@ pub enum KeywordType {
     Fn,
     Enum,
     Union,
-    
 }
 
 #[derive(Debug)]
@@ -45,16 +40,10 @@ impl Token {
     }
 
     pub fn is_keyword(&self) -> bool {
-        match self.1 {
-            TokenType::Keyword(_) => true,
-            _ => false,
-        }
+        matches!(self.1, TokenType::Keyword(_))
     }
 
     pub fn is_int(&self) -> bool {
-        match self.1 {
-            TokenType::Integer(_) => true,
-            _ => false,
-        }
+        matches!(self.1, TokenType::Integer(_))
     }
 }
