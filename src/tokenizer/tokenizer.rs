@@ -38,15 +38,40 @@ impl Tokenizer {
     pub fn next_token(&mut self) -> Option<Token> {
         if let Some(c) = self.advance() {
             match c {
-                b'a'..=b'z' => {
+                b'a'..=b'z' | b'A'..=b'Z' => {
+                    let mut identifier = Vec::new();
+                    identifier.push(c);
+                    'identifier: while let Some(character) = self.peek() {
+                        if character.is_ascii_alphanumeric() {
+                            identifier.push(character);
+                            self.advance();
+                        }
+                        else { 
+                            break 'identifier 
+                        }
+                    }
+                    let pos = Pos::new(self.pos, self.pos+1, self.line);
+                    Some(Token::new(pos, TokenType::String(String::from_utf8(identifier).unwrap())))
+                },
+                b'0'..=b'9' => {
                     self.pos += 1;
-                    let diag = Pos::new(self.pos, self.pos+1, self.line);
-                    Some(Token::new(diag, TokenType::String(String::from(char::from_u32(c.into()).unwrap()))))
+                    let pos = Pos::new(self.pos, self.pos+1, self.line);
+                    Some(Token::new(pos, TokenType::Integer(12)))
+                },
+                b'\n' => {
+                    while let Some(character) = self.peek() {
+                        if character == b'\n' {
+                            self.advance();
+                        }
+                        return self.next_token()
+                    }
+                    None
                 }
                  _ => unimplemented!(),
             }
+        } else {
+            None
         }
-        None
     }
 }
 
