@@ -1,4 +1,4 @@
-use crate::tokenizer::{ Token, TokenType, Pos };
+use crate::tokenizer::{Pos, Token, TokenType};
 
 /// So my idea for the tokenizer is that it should be
 /// implement the standard iterator trait.
@@ -14,10 +14,13 @@ struct Tokenizer {
     line: usize,
 }
 
-
 impl Tokenizer {
     pub fn new(src: String) -> Self {
-        Self { src, line: 0, pos: 0 }
+        Self {
+            src,
+            line: 0,
+            pos: 0,
+        }
     }
 
     fn curr(&self) -> Option<u8> {
@@ -45,36 +48,37 @@ impl Tokenizer {
                         if character.is_ascii_alphanumeric() {
                             identifier.push(character);
                             self.advance();
-                        }
-                        else { 
-                            break 'identifier 
+                        } else {
+                            break 'identifier;
                         }
                     }
-                    let pos = Pos::new(self.pos, self.pos+1, self.line);
-                    Some(Token::new(pos, TokenType::String(String::from_utf8(identifier).unwrap())))
-                },
+                    let pos = Pos::new(self.pos, self.pos + 1, self.line);
+                    Some(Token::new(
+                        pos,
+                        TokenType::String(String::from_utf8(identifier).unwrap()),
+                    ))
+                }
                 b'0'..=b'9' => {
                     self.pos += 1;
-                    let pos = Pos::new(self.pos, self.pos+1, self.line);
+                    let pos = Pos::new(self.pos, self.pos + 1, self.line);
                     Some(Token::new(pos, TokenType::Integer(12)))
-                },
+                }
                 b'\n' => {
                     while let Some(character) = self.peek() {
                         if character == b'\n' {
                             self.advance();
                         }
-                        return self.next_token()
+                        return self.next_token();
                     }
                     None
                 }
-                 _ => unimplemented!(),
+                _ => unimplemented!(),
             }
         } else {
             None
         }
     }
 }
-
 
 impl Iterator for Tokenizer {
     type Item = Token;
