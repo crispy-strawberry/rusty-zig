@@ -24,7 +24,6 @@ impl Tokenizer {
     }
 
     fn curr(&self) -> Option<u8> {
-        // self.src.as_bytes().to_owned()
         self.src.as_bytes().get(self.pos).copied()
     }
 
@@ -42,6 +41,7 @@ impl Tokenizer {
         if let Some(c) = self.advance() {
             match c {
                 b'a'..=b'z' | b'A'..=b'Z' => {
+                    let pos = self.pos;
                     let mut identifier = Vec::new();
                     identifier.push(c);
                     'identifier: while let Some(character) = self.peek() {
@@ -52,7 +52,7 @@ impl Tokenizer {
                             break 'identifier;
                         }
                     }
-                    let pos = Pos::new(self.pos, self.pos + 1, self.line);
+                    let pos = Pos::new(pos, self.pos, self.line);
                     Some(Token::new(
                         pos,
                         TokenType::String(String::from_utf8(identifier).unwrap()),
@@ -66,13 +66,15 @@ impl Tokenizer {
                 b'\n' => {
                     while let Some(character) = self.peek() {
                         if character == b'\n' {
+                            self.line += 1;
                             self.advance();
+                        } else {
+                            return self.next_token();
                         }
-                        return self.next_token();
                     }
                     None
                 }
-                _ => unimplemented!(),
+                _ => panic!("Unidenfied character {c}"),
             }
         } else {
             None
