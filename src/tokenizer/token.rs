@@ -1,12 +1,12 @@
 #[derive(Debug)]
-pub struct Diagnostic {
+pub struct Pos {
     start: usize,
     end: usize,
     line: usize,
     // lexeme: String,
 }
 
-impl Diagnostic {
+impl Pos {
     pub fn new(start: usize, end: usize, line: usize) -> Self {
         Self { start, end, line }
     }
@@ -14,6 +14,7 @@ impl Diagnostic {
 
 #[derive(Debug)]
 pub enum TokenType {
+    Identifier(String),
     Integer(usize),
     String(String),
     Float(f64),
@@ -74,10 +75,10 @@ pub enum KeywordType {
 }
 
 #[derive(Debug)]
-pub struct Token(Diagnostic, TokenType);
+pub struct Token(Pos, TokenType);
 
 impl Token {
-    pub fn new(diag: Diagnostic, r#type: TokenType) -> Self {
+    pub fn new(diag: Pos, r#type: TokenType) -> Self {
         Self(diag, r#type)
     }
 
