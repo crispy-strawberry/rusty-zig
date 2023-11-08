@@ -1,5 +1,61 @@
-use crate::tokenizer::{Pos, Token, TokenType};
+use std::collections::HashMap;
+use once_cell::sync::Lazy;
 
+use crate::tokenizer::{Pos, Token, TokenType, KeywordType};
+
+// lazy_static! {
+pub static KEYWORD_MAP: Lazy<HashMap<&'static str, KeywordType>> = Lazy::new(|| {
+    HashMap::from([
+    ("addrspace", KeywordType::AddrSpace),
+    ("align", KeywordType::Align),
+    ("allowzero", KeywordType::AllowZero),
+    ("and", KeywordType::And),
+    ("anyframe", KeywordType::AnyFrame),
+    ("anytype", KeywordType::AnyType),
+    ("asm", KeywordType::Asm),
+    ("async", KeywordType::Async),
+    ("await", KeywordType::Await),
+    ("break", KeywordType::Break),
+    ("callconv", KeywordType::CallConv),
+    ("catch", KeywordType::Catch),
+    ("comptime", KeywordType::Comptime),
+    ("const", KeywordType::Const),
+    ("continue", KeywordType::Continue),
+    ("defer", KeywordType::Defer),
+    ("else", KeywordType::Else),
+    ("enum", KeywordType::Enum),
+    ("errdefer", KeywordType::Errdefer),
+    ("error", KeywordType::Error),
+    ("export", KeywordType::Export),
+    ("extern", KeywordType::Extern),
+    ("fn", KeywordType::Fn),
+    ("for", KeywordType::For),
+    ("if", KeywordType::If),
+    ("inline", KeywordType::Inline),
+    ("linksection", KeywordType::LinkSection),
+    ("noalias", KeywordType::NoAlias),
+    ("nosuspend", KeywordType::NoSuspend),
+    ("opaque", KeywordType::Opaque),
+    ("or", KeywordType::Or),
+    ("orelse", KeywordType::OrElse),
+    ("packed", KeywordType::Packed),
+    ("pub", KeywordType::Pub),
+    ("resume", KeywordType::Resume),
+    ("return", KeywordType::Return),
+    ("struct", KeywordType::Struct),
+    ("suspend", KeywordType::Suspend),
+    ("switch", KeywordType::Switch),
+    ("test", KeywordType::Test),
+    ("threadlocal", KeywordType::ThreadLocal),
+    ("try", KeywordType::Try),
+    ("union", KeywordType::Union),
+    ("unreachable", KeywordType::Unreachable),
+    ("usingnamespace", KeywordType::UsingNamespace),
+    ("var", KeywordType::Var),
+    ("volatile", KeywordType::Volatile),
+    ("while", KeywordType::While),
+    ])
+});
 /// So my idea for the tokenizer is that it should be
 /// implement the standard iterator trait.
 /// That way, we can also make it peekable easily.

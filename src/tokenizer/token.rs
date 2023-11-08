@@ -14,10 +14,45 @@ impl Pos {
 
 #[derive(Debug)]
 pub enum TokenType {
+    /// +
+    Plus,
+    
+    /// -
+    Minus,
+    
+    /// *
+    Star,
+
+    /// /
+    Slash,
+    
+    /// %
+    Percent,
+
+    /// (
+    LParen,
+    
+    /// )
+    RParen,
+    
+    /// [
+    LSquare,
+    
+    /// ]
+    RSquare,
+    
+    /// {
+    LCurly,
+    
+    /// }
+    RCurly,
+
+
     Identifier(String),
     Integer(usize),
     String(String),
     Float(f64),
+    Builtin(String),
     Keyword(KeywordType),
     EOF,
 }
