@@ -12,52 +12,99 @@ impl Pos {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 pub enum TokenType {
-    /// +
-    Plus,
-    
-    /// -
-    Minus,
-    
-    /// *
-    Star,
-
-    /// /
-    Slash,
-    
-    /// %
-    Percent,
-
-    /// (
-    LParen,
-    
-    /// )
-    RParen,
-    
-    /// [
-    LSquare,
-    
-    /// ]
-    RSquare,
-    
-    /// {
-    LCurly,
-    
-    /// }
-    RCurly,
-
-
-    Identifier(String),
     Integer(usize),
-    String(String),
     Float(f64),
-    Builtin(String),
+    Char(char),
+    String(String),
     Keyword(KeywordType),
-    EOF,
+    PrimitiveType(PrimType),
+
+    Ampersand,      // &
+    AmpersandEqual, // &=
+
+    Asterisk,             // *
+    Asterisk2,            // **
+    AsteriskEqual,        // *=
+    AsteriskPercent,      // *%
+    AsteriskPercentEqual, // *%=
+    AsteriskPipe,         // *|
+    AsteriskPipeEqual,    // *|=
+
+    Caret,      // ^
+    CaretEqual, // ^=
+
+    Colon, // :
+    Comma, // ,
+
+    Dot,             // .
+    Dot2,            // ..
+    Dot3,            // ...
+    DotAsterisk,     // .*
+    DotQuestionMark, // .?
+
+    Equal,       // =
+    DoubleEqual, // ==
+    EqualArrow,  // =>
+
+    ExclamationMark,      // !
+    ExclamationMarkEqual, // !=
+
+    LArrow,           // <
+    LArrow2,          // <<
+    LArrow2Equal,     // <<=
+    LArrow2Pipe,      // <<|
+    LArrow2PipeEqual, // <<|=
+    LArrowEqual,      // <=
+
+    LBrace,   // {
+    LBracket, // [
+    LParen,   // (
+
+    Minus,             // -
+    MinusEqual,        // -=
+    MinusPercent,      // -%
+    MinusPercentEqual, // -%=,
+    MinusPipe,         // -|
+    MinusPipeEqual,    // -|=
+    MinusArrow,        // ->
+
+    Percent,      // %
+    PercentEqual, // %=
+
+    Pipe,      // |
+    Pipe2,     // ||
+    PipeEqual, // |=
+
+    Plus,             // +
+    Plus2,            // ++
+    PlusEqual,        // +=
+    PlusPercent,      // +%
+    PlusPercentEqual, // +%=
+    PlusPipe,         // +|
+    PlusPipeEqual,    // +|=
+
+    QuestionMark, // ?
+
+    RArrow,       // >
+    RArrow2,      // >>
+    RArrow2Equal, // >>=
+    RArrowEqual,  // >=
+
+    RBrace,   // }
+    RBracket, // ]
+    RParen,   // )
+
+    Semicolon, // ;
+
+    Slash,      // /
+    SlashEqual, // /=
+
+    Tilde, // ~
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Copy)]
 pub enum KeywordType {
     AddrSpace,
     Align,
@@ -109,6 +156,53 @@ pub enum KeywordType {
     While,
 }
 
+#[derive(Debug, Copy, Clone)]
+pub enum PrimType {
+    I8,
+    U8,
+
+    I16,
+    U16,
+
+    I32,
+    U32,
+
+    I64,
+    U64,
+
+    I128,
+    U128,
+
+    ISize,
+    USize,
+
+    C_char,
+    C_short,
+    C_ushort,
+    C_int,
+    C_uint,
+    C_long,
+    C_ulong,
+    C_longlong,
+    C_ulonglong,
+    C_longdouble,
+
+    F16,
+    F32,
+    F64,
+    F80,
+    F128,
+
+    Bool,
+    AnyOpaque,
+    Void,
+    NoReturn,
+    Type,
+    AnyError,
+    ComptimeInt,
+    ComptimeFloat,
+}
+
 #[derive(Debug)]
 pub struct Token(Pos, TokenType);
 
@@ -123,5 +217,9 @@ impl Token {
 
     pub fn is_int(&self) -> bool {
         matches!(self.1, TokenType::Integer(_))
+    }
+
+    pub fn is_token_type(&self, token_type: TokenType) -> bool {
+        matches!(&self.1, token_type)
     }
 }
