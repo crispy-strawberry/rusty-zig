@@ -1,14 +1,14 @@
 #[derive(Debug)]
 pub struct Pos {
     start: usize,
-    end: usize,
+    width: usize,
     line: usize,
     // lexeme: String,
 }
 
 impl Pos {
-    pub fn new(start: usize, end: usize, line: usize) -> Self {
-        Self { start, end, line }
+    pub fn new(start: usize, width: usize, line: usize) -> Self {
+        Self { start, width, line }
     }
 }
 
@@ -207,8 +207,8 @@ pub enum PrimType {
 pub struct Token(Pos, TokenType);
 
 impl Token {
-    pub fn new(diag: Pos, r#type: TokenType) -> Self {
-        Self(diag, r#type)
+    pub fn new(pos: Pos, r#type: TokenType) -> Self {
+        Self(pos, r#type)
     }
 
     pub fn is_keyword(&self) -> bool {
