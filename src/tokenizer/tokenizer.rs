@@ -152,11 +152,6 @@ impl Tokenizer {
         self.src.as_bytes().get(self.pos + 1).copied()
     }
 
-    /// Takes the cursor back 1 unit
-    fn back(&mut self) {
-        self.pos -= 1;
-    }
-
     /// Takes the cursor forward 1 unit, emitting the token consumed
     fn advance(&mut self) -> Option<u8> {
         let byte = self.current();
@@ -213,30 +208,29 @@ impl Tokenizer {
                     Some(Token(span, TokenType::Tilde))
                 }
                 // Do i really have to do this manually
-                b'&' => match self.advance() {
+                b'&' => match self.current() {
                     Some(b'=') => {
+                        self.advance();
                         let pos = Span::new(self.col - 2, 2, self.line);
                         Some(Token(pos, TokenType::AmpersandEqual))
                     }
-                    _ => {
-                        self.back();
-                        Some(Token(
-                            Span::new(self.col - 1, 1, self.line),
-                            TokenType::Ampersand,
-                        ))
-                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 1, self.line),
+                        TokenType::Ampersand,
+                    )),
                 },
-                b'*' => match self.advance() {
+                b'*' => match self.current() {
                     Some(b'*') => {
+                        self.advance();
                         let span = Span::new(self.pos - 1, 2, self.line);
                         Some(Token(span, TokenType::Asterisk2))
                     }
                     Some(b'=') => {
+                        self.advance();
                         let span = Span::new(self.pos - 1, 2, self.line);
                         Some(Token(span, TokenType::AsteriskEqual))
                     }
                     _ => {
-                        self.back();
                         let span = Span::new(self.pos - 1, 1, self.line);
                         Some(Token(span, TokenType::Asterisk))
                     }
@@ -266,14 +260,15 @@ impl Tokenizer {
                     Some(Token(span, TokenType::Integer(12)))
                 }
                 b' ' | b'\t' | b'\n' => {
-                    while let Some(w) = self.advance() {
+                    while let Some(w) = self.current() {
                         if w == b' ' || w == b'\t' {
+                            self.advance();
                             continue;
                         } else if w == b'\n' {
+                            self.pos += 1;
                             self.line += 1;
                             self.col = 0;
                         } else {
-                            self.back();
                             return self.next_token();
                         }
                     }
