@@ -1,25 +1,31 @@
-#[derive(Debug)]
-pub struct Pos {
-    start: usize,
+/// It is used to specify the location of
+/// tokens in the source text. As far as I know,
+/// Zig doesn't have support for multi line tokens.
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct Span {
+    col: usize,
     width: usize,
     line: usize,
     // lexeme: String,
 }
 
-impl Pos {
-    pub fn new(start: usize, width: usize, line: usize) -> Self {
-        Self { start, width, line }
+impl Span {
+    pub fn new(col: usize, width: usize, line: usize) -> Self {
+        Self { col, width, line }
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, PartialEq)]
 pub enum TokenType {
+    /// A comptime_int
     Integer(usize),
+
+    /// A comptime_float
     Float(f64),
     Char(char),
     String(String),
     Keyword(KeywordType),
-    PrimitiveType(PrimType),
+    PrimitiveType(PrimitiveType),
 
     Ampersand,      // &
     AmpersandEqual, // &=
@@ -44,9 +50,9 @@ pub enum TokenType {
     DotAsterisk,     // .*
     DotQuestionMark, // .?
 
-    Equal,       // =
-    DoubleEqual, // ==
-    EqualArrow,  // =>
+    Equal,      // =
+    EqualEqual, // ==
+    EqualArrow, // =>
 
     ExclamationMark,      // !
     ExclamationMarkEqual, // !=
@@ -104,7 +110,7 @@ pub enum TokenType {
     Tilde, // ~
 }
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 pub enum KeywordType {
     AddrSpace,
     Align,
@@ -156,8 +162,8 @@ pub enum KeywordType {
     While,
 }
 
-#[derive(Debug, Copy, Clone)]
-pub enum PrimType {
+#[derive(Debug, Copy, Clone, PartialEq)]
+pub enum PrimitiveType {
     I8,
     U8,
 
@@ -176,16 +182,16 @@ pub enum PrimType {
     ISize,
     USize,
 
-    C_char,
-    C_short,
-    C_ushort,
-    C_int,
-    C_uint,
-    C_long,
-    C_ulong,
-    C_longlong,
-    C_ulonglong,
-    C_longdouble,
+    Char,
+    Short,
+    Ushort,
+    Int,
+    Uint,
+    Long,
+    Ulong,
+    Longlong,
+    ULonglong,
+    Longdouble,
 
     F16,
     F32,
@@ -203,11 +209,11 @@ pub enum PrimType {
     ComptimeFloat,
 }
 
-#[derive(Debug)]
-pub struct Token(Pos, TokenType);
+#[derive(Debug, Clone)]
+pub struct Token(pub(crate) Span, pub(crate) TokenType);
 
 impl Token {
-    pub fn new(pos: Pos, r#type: TokenType) -> Self {
+    pub fn new(pos: Span, r#type: TokenType) -> Self {
         Self(pos, r#type)
     }
 
@@ -221,5 +227,57 @@ impl Token {
 
     pub fn is_token_type(&self, token_type: TokenType) -> bool {
         matches!(&self.1, token_type)
+    }
+
+    /// Checks if the token is an assign op.
+    /// This will be useful when parsing.
+    pub fn is_assign_op(&self) -> bool {
+        match &self.1 {
+            TokenType::AsteriskEqual
+            | TokenType::AsteriskPipeEqual
+            | TokenType::SlashEqual
+            | TokenType::PercentEqual
+            | TokenType::PlusEqual
+            | TokenType::PlusPipeEqual
+            | TokenType::MinusEqual
+            | TokenType::MinusPipeEqual
+            | TokenType::LArrow2Equal
+            | TokenType::LArrow2PipeEqual
+            | TokenType::RArrow2
+            | TokenType::AmpersandEqual
+            | TokenType::CaretEqual
+            | TokenType::PipeEqual
+            | TokenType::AsteriskPercentEqual
+            | TokenType::PlusPercentEqual
+            | TokenType::MinusPercentEqual
+            | TokenType::Equal => true,
+
+            _ => false,
+        }
+    }
+
+    pub fn is_compare_op(&self) -> bool {
+        match &self.1 {
+            TokenType::EqualEqual
+            | TokenType::ExclamationMarkEqual
+            | TokenType::LArrow
+            | TokenType::RArrow
+            | TokenType::LArrowEqual
+            | TokenType::RArrowEqual => true,
+
+            _ => false,
+        }
+    }
+
+    pub fn is_bitwise_op(&self) -> bool {
+        match &self.1 {
+            TokenType::Ampersand
+            | TokenType::Caret
+            | TokenType::Pipe
+            | TokenType::Keyword(KeywordType::OrElse)
+            | TokenType::Keyword(KeywordType::Catch) => true,
+
+            _ => false,
+        }
     }
 }

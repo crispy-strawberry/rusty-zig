@@ -1,7 +1,9 @@
 use once_cell::sync::Lazy;
 use std::collections::HashMap;
 
-use crate::tokenizer::{KeywordType, Pos, Token, TokenType};
+use crate::tokenizer::{KeywordType, Span, Token, TokenType};
+
+use super::PrimitiveType;
 
 // lazy_static! {
 pub static KEYWORD_MAP: Lazy<HashMap<&'static str, KeywordType>> = Lazy::new(|| {
@@ -57,8 +59,39 @@ pub static KEYWORD_MAP: Lazy<HashMap<&'static str, KeywordType>> = Lazy::new(|| 
     ])
 });
 
+static PRIMITIVE_TYPES: Lazy<HashMap<&'static str, PrimitiveType>> = Lazy::new(|| {
+    use PrimitiveType::*;
+    HashMap::from([
+        ("i8", I8),
+        ("u8", U8),
+        ("i16", I16),
+        ("u16", U16),
+        ("i32", I32),
+        ("u32", U32),
+        ("i64", I64),
+        ("u64", U64),
+        ("i128", I128),
+        ("u128", U128),
+    ])
+});
+
 static OPERATOR_MAP: Lazy<HashMap<&str, TokenType>> =
     Lazy::new(|| HashMap::from([("+", TokenType::Plus)]));
+
+/// A helper enum to avoid repition and make the source
+/// code more readable. As zig has quite a wide range of
+/// operators, it is quite bad to manually check them each
+/// time.
+enum OperatorType {
+    Other(u8),
+    Same,
+    Equals,
+    Percent,
+    PercentEquals,
+    Pipe,
+    PipeEquals,
+}
+
 
 /// So my idea for the tokenizer is that it should be
 /// implement the standard iterator trait.
@@ -83,7 +116,10 @@ impl Tokenizer {
         }
     }
 
-    fn curr(&self) -> Option<u8> {
+    /// Returns the current byte in the src.
+    /// According to me atleast, the operation shouldn't
+    /// be expensive as it just consists of very cheap functions
+    fn current(&self) -> Option<u8> {
         self.src.as_bytes().get(self.pos).copied()
     }
 
@@ -91,26 +127,91 @@ impl Tokenizer {
         self.src.as_bytes().get(self.pos + 1).copied()
     }
 
+    /// Takes the cursor back 1 unit
+    fn back(&mut self) {
+        self.pos -= 1;
+    }
+
+    /// Takes the cursor forward 1 unit, emitting the token consumed
     fn advance(&mut self) -> Option<u8> {
-        let byte = self.curr();
+        let byte = self.current();
         self.pos += 1;
         byte
+    }
+
+    fn advance_steps(&mut self, step: usize) {
+        self.pos += step;
     }
 
     pub fn next_token(&mut self) -> Option<Token> {
         if let Some(c) = self.advance() {
             match c {
+                b'{' => {
+                    let pos = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(pos, TokenType::LBrace))
+                }
+                b'[' => {
+                    let pos = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(pos, TokenType::LBracket))
+                }
+                b'(' => {
+                    let pos = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(pos, TokenType::LParen))
+                }
+                b'}' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::RBrace))
+                }
+                b']' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::RBracket))
+                }
+                b')' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::RParen))
+                }
+                b';' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::Semicolon))
+                }
+                b':' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::Colon))
+                }
+                b',' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::Comma))
+                }
+                b'~' => {
+                    let span = Span::new(self.pos - 1, 1, self.line);
+                    Some(Token(span, TokenType::Tilde))
+                }
                 // Do i really have to do this manually
-                b'&' => match self.peek() {
+                b'&' => match self.advance() {
                     Some(b'=') => {
-                        self.advance();
-                        let pos = Pos::new(self.pos - 1, 2, self.line);
-                        Some(Token::new(pos, TokenType::AmpersandEqual))
+                        let pos = Span::new(self.pos - 1, 2, self.line);
+                        Some(Token(pos, TokenType::Ampersand))
                     }
-                    _ => Some(Token::new(
-                        Pos::new(self.pos, 1, self.line),
+                    _ => Some(Token(
+                        Span::new(self.pos, 1, self.line),
                         TokenType::Ampersand,
                     )),
+                },
+                b'*' => match self.advance() {
+                    Some(b'*') => {
+                        let span = Span::new(self.pos - 1, 2, self.line);
+                        let token_type = TokenType::Asterisk2;
+                        Some(Token(span, token_type))
+                    }
+                    Some(b'=') => {
+                        let span = Span::new(self.pos - 1, 2, self.line);
+                        let tok_type = TokenType::AsteriskEqual;
+                        Some(Token)
+                    }
+                    _ => {
+                        self.back();
+                        let span = Span::new(self.pos , , )
+                    }
                 },
 
                 b'a'..=b'z' | b'A'..=b'Z' => {
@@ -125,16 +226,16 @@ impl Tokenizer {
                             break 'identifier;
                         }
                     }
-                    let pos = Pos::new(pos, self.pos, self.line);
-                    Some(Token::new(
-                        pos,
+                    let span = Span::new(pos, self.pos, self.line);
+                    Some(Token(
+                        span,
                         TokenType::String(String::from_utf8(identifier).unwrap()),
                     ))
                 }
                 b'0'..=b'9' => {
                     self.pos += 1;
-                    let pos = Pos::new(self.pos, self.pos + 1, self.line);
-                    Some(Token::new(pos, TokenType::Integer(12)))
+                    let span = Span::new(self.pos, self.pos + 1, self.line);
+                    Some(Token(span, TokenType::Integer(12)))
                 }
                 b'\n' => {
                     while let Some(character) = self.peek() {
