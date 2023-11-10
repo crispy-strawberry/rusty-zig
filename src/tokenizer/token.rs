@@ -3,9 +3,9 @@
 /// Zig doesn't have support for multi line tokens.
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct Span {
-    col: usize,
-    width: usize,
-    line: usize,
+    pub(crate) col: usize,
+    pub(crate) width: usize,
+    pub(crate) line: usize,
     // lexeme: String,
 }
 
