@@ -168,16 +168,16 @@ impl Tokenizer {
         if let Some(c) = self.advance() {
             match c {
                 b'{' => {
-                    let pos = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(pos, TokenType::LBrace))
+                    let span = Span::new(self.col - 1, 1, self.line);
+                    Some(Token(span, TokenType::LBrace))
                 }
                 b'[' => {
-                    let pos = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(pos, TokenType::LBracket))
+                    let span = Span::new(self.col - 1, 1, self.line);
+                    Some(Token(span, TokenType::LBracket))
                 }
                 b'(' => {
-                    let pos = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(pos, TokenType::LParen))
+                    let span = Span::new(self.col - 1, 1, self.line);
+                    Some(Token(span, TokenType::LParen))
                 }
                 b'}' => {
                     let span = Span::new(self.col - 1, 1, self.line);
