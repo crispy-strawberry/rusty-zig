@@ -222,16 +222,16 @@ impl Tokenizer {
                 b'*' => match self.current() {
                     Some(b'*') => {
                         self.advance();
-                        let span = Span::new(self.pos - 1, 2, self.line);
+                        let span = Span::new(self.col - 1, 2, self.line);
                         Some(Token(span, TokenType::Asterisk2))
                     }
                     Some(b'=') => {
                         self.advance();
-                        let span = Span::new(self.pos - 1, 2, self.line);
+                        let span = Span::new(self.col - 1, 2, self.line);
                         Some(Token(span, TokenType::AsteriskEqual))
                     }
                     _ => {
-                        let span = Span::new(self.pos - 1, 1, self.line);
+                        let span = Span::new(self.col - 1, 1, self.line);
                         Some(Token(span, TokenType::Asterisk))
                     }
                 },
@@ -259,17 +259,22 @@ impl Tokenizer {
                     let span = Span::new(self.pos, self.pos + 1, self.line);
                     Some(Token(span, TokenType::Integer(12)))
                 }
-                b' ' | b'\t' | b'\n' => {
+                b' ' | b'\t' | b'\n' | b'\r' => {
+                    if c == b'\n' {
+                        self.line += 1;
+                        self.col = 0;
+                    }
                     while let Some(w) = self.current() {
-                        if w == b' ' || w == b'\t' {
-                            self.advance();
-                            continue;
-                        } else if w == b'\n' {
-                            self.pos += 1;
-                            self.line += 1;
-                            self.col = 0;
-                        } else {
-                            return self.next_token();
+                        match w {
+                            b' ' | b'\t' | b'\r' => {
+                                self.advance();
+                            }
+                            b'\n' => {
+                                self.pos += 1;
+                                self.line += 1;
+                                self.col = 0;
+                            }
+                            _ => return self.next_token(),
                         }
                     }
                     None
