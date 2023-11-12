@@ -167,50 +167,50 @@ impl Tokenizer {
     pub fn next_token(&mut self) -> Option<Token> {
         if let Some(c) = self.advance() {
             match c {
-                b'{' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::LBrace))
-                }
-                b'[' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::LBracket))
-                }
-                b'(' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::LParen))
-                }
-                b'}' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::RBrace))
-                }
-                b']' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::RBracket))
-                }
-                b')' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::RParen))
-                }
-                b'?' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::QuestionMark))
-                }
-                b';' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::Semicolon))
-                }
-                b':' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::Colon))
-                }
-                b',' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::Comma))
-                }
-                b'~' => {
-                    let span = Span::new(self.col - 1, 1, self.line);
-                    Some(Token(span, TokenType::Tilde))
-                }
+                b'{' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::LBrace,
+                )),
+                b'[' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::LBracket,
+                )),
+                b'(' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::LParen,
+                )),
+                b'}' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::RBrace,
+                )),
+                b']' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::RBracket,
+                )),
+                b')' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::RParen,
+                )),
+                b'?' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::QuestionMark,
+                )),
+                b';' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::Semicolon,
+                )),
+                b':' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::Colon,
+                )),
+                b',' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::Comma,
+                )),
+                b'~' => Some(Token(
+                    Span::new(self.col - 1, 1, self.line),
+                    TokenType::Tilde,
+                )),
                 // Do i really have to do this manually
                 b'&' => match self.current() {
                     Some(b'=') => {
@@ -269,6 +269,39 @@ impl Tokenizer {
                     _ => Some(Token(
                         Span::new(self.col - 1, 1, self.line),
                         TokenType::Slash,
+                    )),
+                },
+
+                b'=' => match self.current() {
+                    Some(b'=') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::EqualEqual))
+                    }
+                    Some(b'>') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::EqualArrow))
+                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 1, self.line),
+                        TokenType::Equal,
+                    )),
+                },
+                b'|' => match self.current() {
+                    Some(b'|') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::Pipe2))
+                    }
+                    Some(b'=') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::PipeEqual))
+                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 2, self.line),
+                        TokenType::Pipe,
                     )),
                 },
 
