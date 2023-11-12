@@ -191,6 +191,10 @@ impl Tokenizer {
                     let span = Span::new(self.col - 1, 1, self.line);
                     Some(Token(span, TokenType::RParen))
                 }
+                b'?' => {
+                    let span = Span::new(self.col - 1, 1, self.line);
+                    Some(Token(span, TokenType::QuestionMark))
+                }
                 b';' => {
                     let span = Span::new(self.col - 1, 1, self.line);
                     Some(Token(span, TokenType::Semicolon))
@@ -219,6 +223,55 @@ impl Tokenizer {
                         TokenType::Ampersand,
                     )),
                 },
+
+                b'^' => match self.current() {
+                    Some(b'=') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::CaretEqual))
+                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 1, self.line),
+                        TokenType::Caret,
+                    )),
+                },
+
+                b'!' => match self.current() {
+                    Some(b'=') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::ExclamationMarkEqual))
+                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 1, self.line),
+                        TokenType::ExclamationMark,
+                    )),
+                },
+
+                b'%' => match self.current() {
+                    Some(b'=') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::PercentEqual))
+                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 1, self.line),
+                        TokenType::PercentEqual,
+                    )),
+                },
+
+                b'/' => match self.current() {
+                    Some(b'=') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::SlashEqual))
+                    }
+                    _ => Some(Token(
+                        Span::new(self.col - 1, 1, self.line),
+                        TokenType::Slash,
+                    )),
+                },
+
                 b'*' => match self.current() {
                     Some(b'*') => {
                         self.advance();
@@ -248,7 +301,7 @@ impl Tokenizer {
                             break 'identifier;
                         }
                     }
-                    let span = Span::new(pos, self.pos, self.line);
+                    let span = Span::new(pos, identifier.len().try_into().unwrap(), self.line);
                     Some(Token(
                         span,
                         TokenType::String(String::from_utf8(identifier).unwrap()),
@@ -256,7 +309,7 @@ impl Tokenizer {
                 }
                 b'0'..=b'9' => {
                     self.pos += 1;
-                    let span = Span::new(self.pos, self.pos + 1, self.line);
+                    let span = Span::new(self.pos, 1, self.line);
                     Some(Token(span, TokenType::Integer(12)))
                 }
                 b' ' | b'\t' | b'\n' | b'\r' => {

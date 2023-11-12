@@ -209,6 +209,10 @@ pub enum PrimitiveType {
     ComptimeFloat,
 }
 
+/// A token in zig source code.
+/// It is a tuple struct consisting of a `Span` and a
+/// TokenType. `Span` is mostly for error diagnostic purposes
+/// and `TokenType` is for the actual token information.
 #[derive(Debug, Clone)]
 pub struct Token(pub(crate) Span, pub(crate) TokenType);
 
