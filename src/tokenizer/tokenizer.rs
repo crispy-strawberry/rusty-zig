@@ -1,11 +1,19 @@
 use once_cell::sync::Lazy;
-use std::collections::HashMap;
+use std::{char, collections::HashMap};
 
 use crate::tokenizer::{KeywordType, Span, Token, TokenType};
 
 use super::PrimitiveType;
 
-// lazy_static! {
+/// So my own implementation of a stack allocated compile time known map is
+/// atleast 20x faster than a hashmap when doing randomized testing for
+/// getting keywords. We don't need a heap allocated hashmap here so I will probably
+/// change this in the future.
+/// Some nuance after i did some more testing. `HashMap` is not slow, `once_cell::sync::Lazy`
+/// is. `HashMap` is faster than `ConstMap` when not used in a global context and without `Lazy`
+/// One thing i might do for my map is to rearrange those values that occur more freqently
+/// at the top. Obviously, not all keywords are present with the same freqeuncy and rearranging
+/// the map so that frequenty used keywords are at top would provide some performance benefits.
 pub static KEYWORD_MAP: Lazy<HashMap<&'static str, KeywordType>> = Lazy::new(|| {
     HashMap::from([
         ("addrspace", KeywordType::AddrSpace),
@@ -104,12 +112,13 @@ static OPERATOR_MAP: Lazy<HashMap<&str, TokenType>> =
 
 /// A helper enum to avoid repition and make the source
 /// code more readable. As zig has quite a wide range of
-/// operators, it is reptitative and ugly to manually check
+/// operators, it is repetative and ugly to manually check
 /// them each time.
 enum OperatorType {
     Other(u8),
     Same,
-    Equals,
+    None,
+    Equal,
     Percent,
     PercentEquals,
     Pipe,
@@ -127,6 +136,9 @@ enum OperatorType {
 pub struct Tokenizer {
     src: String,
     pos: usize,
+
+    /// This should probably be based on grapheme clusters.
+    /// Man positioning is difficult.
     col: usize,
     line: usize,
 }
@@ -152,7 +164,7 @@ impl Tokenizer {
         self.src.as_bytes().get(self.pos + 1).copied()
     }
 
-    /// Takes the cursor forward 1 unit, emitting the token consumed
+    /// Takes the cursor forward 1 unit, emitting the byte consumed
     fn advance(&mut self) -> Option<u8> {
         let byte = self.current();
         self.pos += 1;
@@ -162,6 +174,21 @@ impl Tokenizer {
 
     fn advance_steps(&mut self, step: usize) {
         self.pos += step;
+    }
+
+    fn get_operator(&mut self, op: u8) -> OperatorType {
+        match self.current() {
+            c if Some(op) == c => OperatorType::Same,
+            Some(b'=') => OperatorType::Equal,
+            Some(b'%') => {
+                if Some(b'=') == self.peek() {
+                    OperatorType::PercentEquals
+                } else {
+                    OperatorType::Percent
+                }
+            }
+            _ => OperatorType::None,
+        }
     }
 
     pub fn next_token(&mut self) -> Option<Token> {
@@ -211,7 +238,7 @@ impl Tokenizer {
                     Span::new(self.col - 1, 1, self.line),
                     TokenType::Tilde,
                 )),
-                // Do i really have to do this manually
+
                 b'&' => match self.current() {
                     Some(b'=') => {
                         self.advance();
@@ -256,7 +283,7 @@ impl Tokenizer {
                     }
                     _ => Some(Token(
                         Span::new(self.col - 1, 1, self.line),
-                        TokenType::PercentEqual,
+                        TokenType::Percent,
                     )),
                 },
 
@@ -303,6 +330,31 @@ impl Tokenizer {
                         Span::new(self.col - 1, 2, self.line),
                         TokenType::Pipe,
                     )),
+                },
+
+                b'.' => match self.current() {
+                    Some(b'*') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::DotAsterisk))
+                    }
+                    Some(b'?') => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::DotQuestionMark))
+                    }
+                    Some(b'.') => {
+                        self.advance();
+                        if self.current() == Some(b'.') {
+                            self.advance();
+                            let span = Span::new(self.col - 3, 3, self.line);
+                            Some(Token(span, TokenType::Dot3))
+                        } else {
+                            let span = Span::new(self.col - 2, 2, self.line);
+                            Some(Token(span, TokenType::Dot2))
+                        }
+                    }
+                    _ => Some(Token(Span::new(self.col - 1, 1, self.line), TokenType::Dot)),
                 },
 
                 b'*' => match self.current() {
@@ -365,7 +417,18 @@ impl Tokenizer {
                     }
                     None
                 }
-                _ => panic!("Unidenfied character {c}"),
+                _ => {
+                    let err_src = self.src.get(std::ops::RangeFrom {
+                        start: self.pos - 1,
+                    });
+                    match err_src {
+                        Some(err_string) => println!("lol: {err_string}"),
+                        None => println!("Fuck me!"),
+                    }
+                    /// println!("{err_src:?}");
+                    let span = Span::new(self.col - 1, 0, self.line);
+                    Some(Token(span, TokenType::Unknown))
+                }
             }
         } else {
             None

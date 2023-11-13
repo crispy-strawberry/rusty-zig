@@ -27,6 +27,8 @@ pub enum TokenType {
     Keyword(KeywordType),
     PrimitiveType(PrimitiveType),
 
+    Unknown,
+
     Ampersand,      // &
     AmpersandEqual, // &=
 

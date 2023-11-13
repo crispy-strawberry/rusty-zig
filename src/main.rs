@@ -1,13 +1,14 @@
-use rusty_zig::tokenizer::Tokenizer;
+use rusty_zig::tokenizer::{Span, Token, Tokenizer};
 
 fn main() {
     let src = String::from(
-        "{[ }](   ;
-[; , &,]
-        ,)&={}&( )",
+        "{[% }](  %= ;
+[; , &, . .? .* ©
+        == , => != ! ...
+        ^ ^= |&
+        ,)&={}&(||)",
     );
     let tokenizer = Tokenizer::new(src);
-    for tok in tokenizer {
-        println!("{tok:?}");
-    }
+    let tokens: Vec<Token> = tokenizer.collect();
+    println!("{:?}", tokens);
 }
