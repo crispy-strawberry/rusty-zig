@@ -418,16 +418,19 @@ impl Tokenizer {
                     None
                 }
                 _ => {
-                    let err_src = self.src.get(std::ops::RangeFrom {
-                        start: self.pos - 1,
-                    });
-                    match err_src {
-                        Some(err_string) => println!("lol: {err_string}"),
-                        None => println!("Fuck me!"),
-                    }
-                    /// println!("{err_src:?}");
-                    let span = Span::new(self.col - 1, 0, self.line);
-                    Some(Token(span, TokenType::Unknown))
+                    let err_src = self
+                        .src
+                        .get(std::ops::RangeFrom {
+                            start: self.pos - 1,
+                        })
+                        .unwrap();
+
+                    let unknown_c = err_src.chars().next().unwrap();
+                    self.pos += unknown_c.len_utf8() - 1;
+                    // self.col += 1;
+                    // println!("{err_src:?}");
+                    let span = Span::new(self.col - 1, unknown_c.len_utf8(), self.line);
+                    Some(Token(span, TokenType::Unknown(unknown_c)))
                 }
             }
         } else {
