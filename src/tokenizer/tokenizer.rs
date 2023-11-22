@@ -115,14 +115,14 @@ static OPERATOR_MAP: Lazy<HashMap<&str, TokenType>> =
 /// operators, it is repetative and ugly to manually check
 /// them each time.
 enum OperatorType {
-    Other(u8),
-    Same,
-    None,
     Equal,
+    Other(u8),
     Percent,
     PercentEquals,
     Pipe,
     PipeEquals,
+    Same,
+    None,
 }
 
 /// So my idea for the tokenizer is that it should be
@@ -174,11 +174,12 @@ impl Tokenizer {
 
     fn advance_steps(&mut self, step: usize) {
         self.pos += step;
+        self.col += step;
     }
 
     fn get_operator(&mut self, op: u8) -> OperatorType {
         match self.current() {
-            c if Some(op) == c => OperatorType::Same,
+            Some(c) if c == op => OperatorType::Same,
             Some(b'=') => OperatorType::Equal,
             Some(b'%') => {
                 if Some(b'=') == self.peek() {
@@ -187,7 +188,15 @@ impl Tokenizer {
                     OperatorType::Percent
                 }
             }
-            _ => OperatorType::None,
+            Some(b'|') => {
+                if Some(b'=') == self.peek() {
+                    OperatorType::PipeEquals
+                } else {
+                    OperatorType::PipeEquals
+                }
+            }
+            None => OperatorType::None,
+            _ => OperatorType::Other(self.current().unwrap()),
         }
     }
 
@@ -357,16 +366,36 @@ impl Tokenizer {
                     _ => Some(Token(Span::new(self.col - 1, 1, self.line), TokenType::Dot)),
                 },
 
-                b'*' => match self.current() {
-                    Some(b'*') => {
+                b'*' => match self.get_operator(c) {
+                    OperatorType::Same => {
                         self.advance();
                         let span = Span::new(self.col - 1, 2, self.line);
                         Some(Token(span, TokenType::Asterisk2))
                     }
-                    Some(b'=') => {
+                    OperatorType::Equal => {
                         self.advance();
                         let span = Span::new(self.col - 1, 2, self.line);
                         Some(Token(span, TokenType::AsteriskEqual))
+                    }
+                    OperatorType::Percent => {
+                        self.advance();
+                        let span = Span::new(self.col - 1, 2, self.line);
+                        Some(Token(span, TokenType::AsteriskPercent))
+                    }
+                    OperatorType::PercentEquals => {
+                        self.advance_steps(2);
+                        let span = Span::new(self.col - 2, 3, self.line);
+                        Some(Token(span, TokenType::AsteriskPercentEqual))
+                    }
+                    OperatorType::Pipe => {
+                        self.advance();
+                        let span = Span::new(self.col - 2, 2, self.line);
+                        Some(Token(span, TokenType::AsteriskPipe))
+                    }
+                    OperatorType::PipeEquals => {
+                        self.advance_steps(2);
+                        let span = Span::new(self.col - 3, 3, self.line);
+                        Some(Token(span, TokenType::AsteriskPipeEqual))
                     }
                     _ => {
                         let span = Span::new(self.col - 1, 1, self.line);
@@ -418,12 +447,7 @@ impl Tokenizer {
                     None
                 }
                 _ => {
-                    let err_src = self
-                        .src
-                        .get(std::ops::RangeFrom {
-                            start: self.pos - 1,
-                        })
-                        .unwrap();
+                    let err_src = self.src.get((self.pos - 1)..).unwrap();
 
                     let unknown_c = err_src.chars().next().unwrap();
                     self.pos += unknown_c.len_utf8() - 1;
